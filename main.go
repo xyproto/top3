@@ -65,7 +65,7 @@ func main() {
 	}
 
 	// Start KataGo Analysis engine
-	cmd := exec.Command("katago", "analysis", "-config", "./analyze.cfg", "-model", "./g170-b30c320x2-s4824661760-d1229536699.bin.gz")
+	cmd := exec.Command("katago", "analysis", "-config", "analyze.cfg", "-model", "model.bin.gz")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		log.Fatalf("Failed to get stdin: %v", err)
