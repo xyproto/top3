@@ -30,7 +30,7 @@ func TestKataGoCommunication(t *testing.T) {
 		t.Fatalf("Failed to marshal query to JSON: %v", err)
 	}
 
-	cmd := exec.Command("katago", "analysis", "-config", "./analyze.cfg", "-model", "/opt/homebrew/Cellar/katago/1.14.1/share/katago/g170-b30c320x2-s4824661760-d1229536699.bin.gz")
+	cmd := exec.Command("katago", "analysis", "-config", "analyze.cfg", "-model", "g170-b30c320x2-s4824661760-d1229536699.bin.gz")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdin: %v", err)

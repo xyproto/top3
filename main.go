@@ -1,4 +1,4 @@
-// katago.go
+// main.go
 
 package main
 
@@ -12,23 +12,23 @@ import (
 
 // KataGoQuery represents a query to be sent to KataGo
 type KataGoQuery struct {
-	ID            string       `json:"id"`
-	InitialStones [][2]string  `json:"initialStones"`
-	Moves         [][2]string  `json:"moves"`
-	Rules         string       `json:"rules"`
-	Komi          float64      `json:"komi"`
-	BoardXSize    int          `json:"boardXSize"`
-	BoardYSize    int          `json:"boardYSize"`
-	AnalyzeTurns  []int        `json:"analyzeTurns"`
-	MaxVisits     int          `json:"maxVisits"`
+	ID            string      `json:"id"`
+	InitialStones [][2]string `json:"initialStones"`
+	Moves         [][2]string `json:"moves"`
+	Rules         string      `json:"rules"`
+	Komi          float64     `json:"komi"`
+	BoardXSize    int         `json:"boardXSize"`
+	BoardYSize    int         `json:"boardYSize"`
+	AnalyzeTurns  []int       `json:"analyzeTurns"`
+	MaxVisits     int         `json:"maxVisits"`
 }
 
 // KataGoResponse represents a response from KataGo
 type KataGoResponse struct {
-	ID        string `json:"id"`
-	Error     string `json:"error,omitempty"`
+	ID         string `json:"id"`
+	Error      string `json:"error,omitempty"`
 	TurnNumber int    `json:"turnNumber,omitempty"`
-	MoveInfos []struct {
+	MoveInfos  []struct {
 		Move    string  `json:"move"`
 		Winrate float64 `json:"winrate"`
 		Visits  int     `json:"visits"`
@@ -36,15 +36,26 @@ type KataGoResponse struct {
 }
 
 func main() {
+	filePath := "example.sgf"
+	sgfContent, err := LoadSGF(filePath)
+	if err != nil {
+		log.Fatalf("Error loading SGF file: %v", err)
+	}
+
+	initialStones, moves, rules, komi, boardSize, err := parseSGF(sgfContent)
+	if err != nil {
+		log.Fatalf("Error parsing SGF file: %v", err)
+	}
+
 	query := KataGoQuery{
 		ID:            "query1",
-		InitialStones: [][2]string{{"B", "D4"}},
-		Moves:         [][2]string{},
-		Rules:         "tromp-taylor",
-		Komi:          7.5,
-		BoardXSize:    19,
-		BoardYSize:    19,
-		AnalyzeTurns:  []int{0},
+		InitialStones: initialStones,
+		Moves:         moves,
+		Rules:         rules,
+		Komi:          komi,
+		BoardXSize:    boardSize,
+		BoardYSize:    boardSize,
+		AnalyzeTurns:  []int{len(moves)},
 		MaxVisits:     1000,
 	}
 
@@ -54,7 +65,7 @@ func main() {
 	}
 
 	// Start KataGo Analysis engine
-	cmd := exec.Command("katago", "analysis", "-config", "analyze.cfg", "-model", "g170-b30c320x2-s4824661760-d1229536699.bin.gz")
+	cmd := exec.Command("katago", "analysis", "-config", "./analyze.cfg", "-model", "./g170-b30c320x2-s4824661760-d1229536699.bin.gz")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		log.Fatalf("Failed to get stdin: %v", err)
