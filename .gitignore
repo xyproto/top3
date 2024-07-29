@@ -1,0 +1,8 @@
+*.bak
+*.swp
+*.tmp
+*.o
+include.txt
+.DS_Store
+top3
+analysis_logs/
