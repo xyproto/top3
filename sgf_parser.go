@@ -1,11 +1,9 @@
-// sgf_parser.go
-
 package main
 
 import (
 	"fmt"
+	"log"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -27,8 +25,7 @@ func parseSGF(content string) (initialStones [][2]string, moves [][2]string, rul
 	}
 
 	content = content[1 : len(content)-1]
-	re := regexp.MustCompile(`;([^;()]+)`)
-	matches := re.FindAllStringSubmatch(content, -1)
+	nodes := strings.Split(content, ";")
 
 	initialStones = make([][2]string, 0)
 	moves = make([][2]string, 0)
@@ -36,18 +33,22 @@ func parseSGF(content string) (initialStones [][2]string, moves [][2]string, rul
 	komi = 7.5
 	boardSize = 19
 
-	for _, match := range matches {
-		props := match[1]
-		if strings.HasPrefix(props, "B[") || strings.HasPrefix(props, "W[") {
-			player := string(props[0])
-			pos := props[2:4]
+	for _, node := range nodes {
+		if len(node) == 0 {
+			continue
+		}
+		if strings.HasPrefix(node, "B[") || strings.HasPrefix(node, "W[") {
+			player := string(node[0])
+			pos := strings.ToLower(node[2:4])
+			log.Printf("Processing move: player=%s, pos=%s", player, pos)
 			gtpPos, valid := convertToGTP(pos)
 			if !valid {
 				return nil, nil, "", 0, 0, fmt.Errorf("invalid SGF position: %s", pos)
 			}
+			log.Printf("Converted GTP position: %s", gtpPos)
 			moves = append(moves, [2]string{player, gtpPos})
 		} else {
-			handleSGFProperty(props, &initialStones, &rules, &komi, &boardSize)
+			handleSGFProperty(node, &initialStones, &rules, &komi, &boardSize)
 		}
 	}
 
@@ -66,7 +67,7 @@ func handleSGFProperty(props string, initialStones *[][2]string, rules *string, 
 	case strings.HasPrefix(props, "AB["):
 		positions := extractPositions(props)
 		for _, pos := range positions {
-			gtpPos, valid := convertToGTP(pos)
+			gtpPos, valid := convertToGTP(strings.ToLower(pos))
 			if valid {
 				*initialStones = append(*initialStones, [2]string{"B", gtpPos})
 			}
@@ -74,7 +75,7 @@ func handleSGFProperty(props string, initialStones *[][2]string, rules *string, 
 	case strings.HasPrefix(props, "AW["):
 		positions := extractPositions(props)
 		for _, pos := range positions {
-			gtpPos, valid := convertToGTP(pos)
+			gtpPos, valid := convertToGTP(strings.ToLower(pos))
 			if valid {
 				*initialStones = append(*initialStones, [2]string{"W", gtpPos})
 			}
@@ -84,29 +85,57 @@ func handleSGFProperty(props string, initialStones *[][2]string, rules *string, 
 
 // extractPositions extracts positions from an SGF property
 func extractPositions(prop string) []string {
-	re := regexp.MustCompile(`\[([a-z]{2})\]`)
-	matches := re.FindAllStringSubmatch(prop, -1)
-
-	positions := make([]string, len(matches))
-	for i, match := range matches {
-		positions[i] = match[1]
+	positions := []string{}
+	start := strings.Index(prop, "[")
+	for start != -1 {
+		end := strings.Index(prop[start:], "]")
+		if end == -1 {
+			break
+		}
+		end += start
+		pos := prop[start+1 : end]
+		positions = append(positions, pos)
+		start = strings.Index(prop[end:], "[")
+		if start == -1 {
+			break
+		}
+		start += end
 	}
-
 	return positions
 }
 
 // convertToGTP converts an SGF position to GTP format
 func convertToGTP(sgfPos string) (string, bool) {
+	log.Printf("Converting SGF position: %s", sgfPos)
+
 	if len(sgfPos) != 2 {
+		log.Printf("Invalid SGF position length: %s", sgfPos)
 		return "", false
 	}
-	col := sgfPos[0] - 'a'
-	if col >= 8 { // Skip the 'I' column
+
+	colChar := sgfPos[0]
+	rowChar := sgfPos[1]
+
+	log.Printf("Column character: %c, Row character: %c", colChar, rowChar)
+
+	col := colChar - 'a'
+	row := 19 - (rowChar - 'a')
+
+	log.Printf("Initial col=%d, row=%d", col, row)
+
+	// Skip the 'I' column in GTP format
+	if col >= 8 {
 		col++
 	}
-	row := 19 - (sgfPos[1] - 'a')
+
+	log.Printf("Adjusted col for GTP=%d", col)
+
 	if col < 0 || col >= 19 || row < 1 || row > 19 {
+		log.Printf("SGF position out of bounds: col=%d, row=%d", col, row)
 		return "", false
 	}
-	return fmt.Sprintf("%c%d", col+'A', row), true
+
+	gtpPos := fmt.Sprintf("%c%d", col+'A', row)
+	log.Printf("Converted SGF position: %s to GTP position: %s", sgfPos, gtpPos)
+	return gtpPos, true
 }

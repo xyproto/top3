@@ -1,5 +1,3 @@
-// katago_test.go
-
 package main
 
 import (
