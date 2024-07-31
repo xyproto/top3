@@ -6,3 +6,4 @@ include.txt
 .DS_Store
 top3
 analysis_logs/
+gtp_logs/
