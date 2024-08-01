@@ -1,0 +1,20 @@
+katago:
+  path: "/opt/homebrew/bin/katago"
+  arguments: "-model model.bin.gz -config analysis_example.cfg"
+
+analysis:
+  rules: "tromp-taylor"
+  komi: 7.5
+  boardXSize: 19
+  boardYSize: 19
+  maxVisits: 1600
+
+sgf:
+  maxWinrateDropForGoodMove: 2.0
+  minWinrateDropForBadMove: 5.0
+  minWinrateDropForBadHotSpot: 20.0
+  showVariationsAfterLastMove: false
+  minWinrateDropForVariations: 5.0
+  showBadVariations: false
+  maxVariationsForEachMove: 10
+  fileSuffix: "-analyzed"
